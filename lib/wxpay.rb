@@ -1,30 +1,20 @@
 require "wxpay/engine"
-require "wxpay/params_helper"
-require "wxpay/xml_helper"
+require "wxpay/helpers/params_helper"
+require "wxpay/helpers/xml_helper"
+require "wxpay/post_data"
+require "wxpay/native"
+require "wxpay/responder"
 
 module Wxpay
-  class Package
-    include WxHelper::XmlHelper
-    include WxHelper::ParamsHelper
 
-    def initialize post_data
-      @package = Message.new(post_data)
-    end
+end
 
-    def is_validate_sign? app_key
-      hash = {appid: @package.app_id, appkey: app_key, issubscribe: @package.is_subscribe, noncestr: @package.nonce_Str, productid: @package.product_id, timestamp: @package.time_stamp}
-      signature = get_sign(hash)
-      signature == @package.app_signature
-    end
-
-    def generate_package
-      hash = {
-        app_id: 1,
-        package: 2,
-        nonce_str: 3,
-        app_signature: get_sign({appid: 1, appkey: 1, package: 1, timestamp: 1, noncestr: 1, ret_code: 1, reterrmsg: 0})
-      }
-      ResponseMessage.new(hash)
+if defined? ActionController::Base
+  class ActionController::Base
+    def self.wechat_responder opts={}
+      self.send(:include, Wxpay::Responder)
+      package_action_alias(opts[:action_package].to_sym) unless opts[:action_package].blank?
+      notify_action_alias(opts[:action_notify].to_sym) unless opts[:action_notify].blank?
     end
   end
 end

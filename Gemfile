@@ -14,3 +14,4 @@ gemspec
 # gem 'debugger'
 gem 'multi_xml', '>= 0.5.2'
 gem 'roxml'
+gem 'httparty'

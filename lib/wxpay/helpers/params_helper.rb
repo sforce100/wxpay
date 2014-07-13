@@ -1,6 +1,6 @@
 require 'digest'
 
-module Wxpay
+module WxHelper
   module ParamsHelper
     def get_timestamp
       DateTime.now.to_i
