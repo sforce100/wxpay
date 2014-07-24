@@ -11,9 +11,9 @@ module Wxpay
       end
 
       # 生成签名
-      # appid、timestamp、noncestr、productid 以及 appkey。
+      # appid、timestnamp、noncestr、productid 以及 appkey。
       def get_pay_sign data_hash
-        keyvaluestring = sign_hash.sort.map { |k, v| "#{k}=#{v}" }.join("&")
+        keyvaluestring = data_hash.sort.map { |k, v| "#{k}=#{v}" }.join("&")
         Digest::SHA1.hexdigest keyvaluestring
       end
 

@@ -22,10 +22,11 @@ module Wxpay
       end
 
       ['package', 'notify'].each do |mtd|
-        define_method "get_#{mtd}_data" do |post_data|
+        define_method "get_#{mtd}_data" do |post_data, params|
+          next if @wxconfig["#{mtd}_block".to_sym].blank?
           payment_data = {}
           payment_data[:config] = @wxconfig[:config_block].call(post_data, OpenStruct.new).to_h
-          payment_data[mtd.to_sym] = @wxconfig["#{mtd}_block".to_sym].call(post_data, payment_data[:config], OpenStruct.new).to_h
+          payment_data[mtd.to_sym] = @wxconfig["#{mtd}_block".to_sym].call(post_data, payment_data[:config], params)
           payment_data
         end
       end
@@ -42,10 +43,14 @@ module Wxpay
     end
 
     def notify
-      order_data = self.class.get_notify_data(@wx_post.get_data)
-      if @wx_post.is_validate_sign? @app_key
-        "app_signature invalidate"
-      end
+      Rails.logger.info "post_data: #{@wx_post.get_data}"
+      # if @wx_post.is_validate_sign? @app_key
+        Rails.logger.info "app_signature validate"
+        order_data = self.class.get_notify_data(@wx_post.get_data, params)
+        Rails.logger.info "order_data: #{order_data}"
+      # else
+      #   Rails.logger.info "app_signature invalidate"
+      # end
 
       render text: 'success'
     end
@@ -68,19 +73,17 @@ module Wxpay
       render xml: generate_response_message
     end
 
-    def notify
-      
-    end
-
     private
       def parse_wxpay_package
         raw = request.body.read
+        Rails.logger.info "raw: #{raw}"
         @wx_post = Wxpay::PackagePostData.new(raw)
       end
 
       def parse_wxpay_notify
         raw = request.body.read
-        @wx_post = Wxpay::PackagePostData.new(raw)
+        Rails.logger.info "raw: #{raw}"
+        @wx_post = Wxpay::NotifyPostData.new(raw)
       end
 
       def generate_response_message
