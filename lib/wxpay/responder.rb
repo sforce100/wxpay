@@ -9,6 +9,7 @@ module Wxpay
       self.skip_before_filter :verify_authenticity_token
       self.before_filter :parse_wxpay_package, only: [:package]
       self.before_filter :parse_wxpay_notify, only: [:notify]
+      self.before_filter :generate_config_data
     end
     
     module ClassMethods
@@ -30,8 +31,8 @@ module Wxpay
         end
       end
 
-      def configuration post_data
-        @wxconfig[:config_block].call(post_data, OpenStruct.new).to_h
+      def configuration params
+        @wxconfig[:config_block].call(params, OpenStruct.new).to_h
       end
 
       def package_action_alias mtd
@@ -46,9 +47,8 @@ module Wxpay
     end
 
     def notify
-      config = self.class.configuration(@wx_post.get_data)
       result = 
-      if @wx_post.is_validate_sign? config[:pay_sign_key]
+      if @wx_post.is_validate_sign? @config[:pay_sign_key]
         Rails.logger.info "app_signature validate"
         self.class.get_notify_data(@wx_post.get_data, params) ? 'success' : 'fail'
       else
@@ -60,10 +60,9 @@ module Wxpay
     end
 
     def package
-      config = self.class.configuration(@wx_post.get_data)
-      @app_id = config[:app_id]
-      @app_key = config[:pay_sign_key]
-      @paterner_key = config[:paterner_key]
+      @app_id = @config[:app_id]
+      @app_key = @config[:pay_sign_key]
+      @paterner_key = @config[:paterner_key]
       @time_stamp = DateTime.now.to_i
       @nonce_str = SecureRandom.hex 32
       if @wx_post.is_validate_sign? @app_key
@@ -88,6 +87,10 @@ module Wxpay
         raw = request.body.read
         Rails.logger.info "notify raw: #{raw}"
         @wx_post = Wxpay::NotifyPostData.new(raw)
+      end
+
+      def generate_config_data
+        @config = self.class.configuration(params)
       end
 
       def generate_response_message

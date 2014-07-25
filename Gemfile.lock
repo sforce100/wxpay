@@ -2,8 +2,9 @@ PATH
   remote: .
   specs:
     wxpay (0.0.1)
+      httparty
       multi_xml (>= 0.5.2)
-      rails (~> 4.0.3)
+      rails (~> 4.0.2)
       roxml
 
 GEM
@@ -37,7 +38,11 @@ GEM
     builder (3.1.4)
     erubis (2.7.0)
     hike (1.2.3)
+    httparty (0.13.1)
+      json (~> 1.8)
+      multi_xml (>= 0.5.2)
     i18n (0.6.11)
+    json (1.8.1)
     mail (2.5.4)
       mime-types (~> 1.16)
       treetop (~> 1.4.8)
@@ -91,6 +96,7 @@ PLATFORMS
   ruby
 
 DEPENDENCIES
+  httparty
   multi_xml (>= 0.5.2)
   roxml
   sqlite3

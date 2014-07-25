@@ -4,6 +4,7 @@ require "wxpay/helpers/xml_helper"
 require "wxpay/post_data"
 require "wxpay/native"
 require "wxpay/responder"
+require "wxpay/api"
 
 module Wxpay
 
