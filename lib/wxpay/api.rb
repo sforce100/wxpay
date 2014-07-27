@@ -1,3 +1,5 @@
+require 'httparty'
+
 module Wxpay
   class Api
     class << self
@@ -11,13 +13,22 @@ module Wxpay
             'package' => package_str
         }
 
-        string1 = data.sort.map { |k, v| "#{k}=#{v}" }.join("&")
-        pay_sign = Digest::SHA1.hexdigest string1
+        pay_sign = generate_pay_sign(data)
         Rails.logger.info "package: #{package_str}"
         Rails.logger.info "pay_sign: #{pay_sign}"
         data.merge({'pay_sign' => pay_sign})
       end
-      
+
+      # params: appid、appkey、openid、transid、out_trade_no、access_token
+      #         deliver_timestamp、deliver_status、deliver_msg
+      def send_delivernotify data
+        data.merge!({"deliver_status" => "1", "deliver_msg" => "ok"})
+      end
+
+      def cancel_delivernotify data
+        data.merge!({"deliver_status" => "0", "deliver_msg" => data[:deliver_msg]})
+      end
+
       private
         def generate_package config, data
           package_data = {
@@ -43,6 +54,33 @@ module Wxpay
           URI.encode_www_form_component(str).gsub("+", "%20")
         end
 
+        def generate_pay_sign hash
+          params_str = hash.sort.map { |k, v| "#{k}=#{v}" }.join("&")
+          Digest::SHA1.hexdigest params_str
+        end
+
+        def delivernotify data
+          prev_data = {
+            "appid" => data[:appid],
+            "openid" => data[:openid],
+            "transid" => data[:transid],
+            "out_trade_no" => data[:out_trade_no],
+            "deliver_timestamp" => DateTime.now.to_i.to_s,
+            "deliver_status" => data[:deliver_status],
+            "deliver_msg" => data[:deliver_msg],
+            "sign_method" => "sha1"
+          }
+
+          app_signature = generate_pay_sign(prev_data.merge("appkey" => data[:appkey]))
+          prev_data.merge!({"app_signature" => app_signature})
+          
+          result = HTTParty.post(delivernotify_url(data[:access_token]), body: prev_data)
+          raise "微信支付发货请求失败:#{result['errmsg']}" if result['errcode'].to_i != 0
+        end 
+
+        def delivernotify_url access_token
+          "https://api.weixin.qq.com/pay/delivernotify?access_token=#{access_token}"
+        end
     end
   end
 end
