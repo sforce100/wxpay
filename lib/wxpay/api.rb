@@ -4,6 +4,7 @@ module Wxpay
   class Api
     class << self
       def wxpay_params(config, data)
+        config = config.with_indifferent_access
         package_str = generate_package(config, data)
         data = {
             'appid' => config[:app_id],
