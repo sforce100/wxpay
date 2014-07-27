@@ -26,13 +26,13 @@ module Wxpay
         define_method "get_#{mtd}_data" do |post_data, params|
           next if @wxconfig["#{mtd}_block".to_sym].blank?
           payment_data = {}
-          payment_data[mtd.to_sym] = @wxconfig["#{mtd}_block".to_sym].call(post_data, payment_data[:config], params)
+          payment_data[mtd.to_sym] = @wxconfig["#{mtd}_block".to_sym].call(post_data, params, payment_data[:config])
           payment_data
         end
       end
 
-      def configuration params
-        @wxconfig[:config_block].call(params, OpenStruct.new).to_h
+      def configuration post_data, params
+        @wxconfig[:config_block].call(post_data, params, OpenStruct.new).to_h
       end
 
       def package_action_alias mtd
@@ -90,7 +90,7 @@ module Wxpay
       end
 
       def generate_config_data
-        @config = self.class.configuration(params)
+        @config = self.class.configuration(@wx_post.get_data, params)
       end
 
       def generate_response_message
