@@ -24,10 +24,12 @@ module Wxpay
       #         deliver_timestamp、deliver_status、deliver_msg
       def send_delivernotify data
         data.merge!({"deliver_status" => "1", "deliver_msg" => "ok"})
+        delivernotify(data)
       end
 
       def cancel_delivernotify data
         data.merge!({"deliver_status" => "0", "deliver_msg" => data[:deliver_msg]})
+        delivernotify(data)
       end
 
       private
@@ -76,7 +78,9 @@ module Wxpay
           prev_data.merge!({"app_signature" => app_signature})
           
           result = HTTParty.post(delivernotify_url(data[:access_token]), body: prev_data)
-          raise "微信支付发货请求失败:#{result['errmsg']}" if result['errcode'].to_i != 0
+          result_hash = JSON.parse(result)
+          p "delivernotify result: #{result}"
+          raise "微信支付发货请求失败:#{result_hash['errmsg']}" if result_hash['errcode'].to_i != 0
         end 
 
         def delivernotify_url access_token
