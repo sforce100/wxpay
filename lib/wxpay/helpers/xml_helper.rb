@@ -1,5 +1,6 @@
 require 'multi_xml'
 require 'ostruct'
+require 'roxml'
 
 module WxHelper
   module XmlHelper
