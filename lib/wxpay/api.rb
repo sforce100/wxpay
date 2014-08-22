@@ -34,17 +34,11 @@ module Wxpay
 
       private
         def generate_package config, data
-          package_data = {
+          package_data = data.merge({
             'bank_type' => 'WX',
-            'body' => data[:body],
             'fee_type' => '1',
-            'input_charset' => 'UTF-8',
-            'notify_url' => data[:notify_url],
-            'out_trade_no' => data[:out_trade_no],
-            'partner' => config[:partner_id],
-            'spbill_create_ip' => data[:spbill_create_ip],
-            'total_fee' => data[:total_fee]
-          }.sort
+            'input_charset' => 'UTF-8'
+          }).sort
 
           string1 = package_data.map { |k, v| "#{k}=#{v}" }.join("&")
           stringSignTemp = "#{string1}&key=#{config[:partner_key]}"
