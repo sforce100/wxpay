@@ -32,6 +32,13 @@ module Wxpay
         delivernotify(data)
       end
 
+      def update_feedback data
+        result = HTTParty.get(update_feedback_url(data.access_token, data.openid, data.feedbackid))
+        result_hash = JSON.parse(result)
+        p "delivernotify result: #{result}"
+        raise "微信支付发货请求失败:#{result_hash['errmsg']}" if result_hash['errcode'].to_i != 0
+      end
+
       private
         def generate_package config, data
           package_data = data.merge({
@@ -79,6 +86,10 @@ module Wxpay
 
         def delivernotify_url access_token
           "https://api.weixin.qq.com/pay/delivernotify?access_token=#{access_token}"
+        end
+
+        def update_feedback_url access_token, openid, feedbackid
+          "https://api.weixin.qq.com/payfeedback/update?access_token=#{access_token}&openid=#{openid}&feedbackid=#{feedbackid}"
         end
     end
   end

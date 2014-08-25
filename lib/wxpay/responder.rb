@@ -9,25 +9,25 @@ module Wxpay
       self.skip_before_filter :verify_authenticity_token
       self.before_filter :parse_wxpay_package, only: [:package]
       self.before_filter :parse_wxpay_notify, only: [:notify]
+      self.before_filter :parse_wxpay_payfeedback, only: [:payfeedback]
+      self.before_filter :parse_wxpay_warning, only: [:warning]
       self.before_filter :generate_config_data
     end
     
     module ClassMethods
       attr_accessor :wxconfig
 
-      ['config', 'package', 'notify'].each do |mtd|
+      ['config', 'package', 'notify', 'payfeedback', 'warning'].each do |mtd|
         define_method "#{mtd}_block" do |&block|
           @wxconfig ||= {}
           @wxconfig["#{mtd}_block".to_sym] = block
         end
       end
 
-      ['package', 'notify'].each do |mtd|
+      ['package', 'notify', 'payfeedback', 'warning'].each do |mtd|
         define_method "get_#{mtd}_data" do |post_data, params|
-          next if @wxconfig["#{mtd}_block".to_sym].blank?
-          payment_data = {}
-          payment_data[mtd.to_sym] = @wxconfig["#{mtd}_block".to_sym].call(post_data, params, payment_data[:config])
-          payment_data
+          'success' if @wxconfig["#{mtd}_block".to_sym].blank?
+          @wxconfig["#{mtd}_block".to_sym].call(post_data, params, @wxconfig)
         end
       end
 
@@ -44,19 +44,55 @@ module Wxpay
         alias mtd :notify
         self.before_filter :parse_wxpay_notify, only: [mtd]
       end
+
+      def payfeedback_action_alias mtd
+        alias mtd :payfeedback
+        self.before_filter :parse_wxpay_payfeedback, only: [mtd]
+      end
+
+      def warning_action_alias mtd
+        alias mtd :warning
+        self.before_filter :parse_wxpay_warning, only: [mtd]
+      end
     end
 
     def notify
       result = 
       if @wx_post.is_validate_sign? @config[:pay_sign_key]
         Rails.logger.info "app_signature validate"
-        self.class.get_notify_data(@wx_post.get_data, params) ? 'success' : 'fail'
+        self.class.get_notify_data(@wx_post.get_data, params) 
       else
         Rails.logger.info "app_signature invalidate"
         'fail'
       end
 
       render text: result
+    end
+
+    def payfeedback
+      result = 
+      if @wx_post.is_validate_sign? @config[:pay_sign_key]
+        Rails.logger.info "app_signature validate"
+        self.class.get_payfeedback_data(@wx_post.get_data, params)
+      else
+        Rails.logger.info "app_signature invalidate"
+        'fail'
+      end
+
+      render text: result      
+    end
+
+    def warning
+      result = 
+      if @wx_post.is_validate_sign? @config[:pay_sign_key]
+        Rails.logger.info "app_signature validate"
+        self.class.get_warning_data(@wx_post.get_data, params)
+      else
+        Rails.logger.info "app_signature invalidate"
+        'fail'
+      end
+
+      render text: result 
     end
 
     def package
@@ -87,6 +123,18 @@ module Wxpay
         raw = request.body.read
         Rails.logger.info "notify raw: #{raw}"
         @wx_post = Wxpay::NotifyPostData.new(raw)
+      end
+
+      def parse_wxpay_payfeedback
+        raw = request.body.read
+        Rails.logger.info "notify raw: #{raw}"
+        @wx_post = Wxpay::PayFeedbackPostData.new(raw)
+      end
+      
+      def parse_wxpay_warning
+        raw = request.body.read
+        Rails.logger.info "notify raw: #{raw}"
+        @wx_post = Wxpay::WarningPostData.new(raw)
       end
 
       def generate_config_data

@@ -34,4 +34,22 @@ module Wxpay
       signature == @post_data.app_signature
     end
   end
+
+  class PayFeedbackPostData < PostDataBase
+    def initialize post_data
+      @post_data = PayFeedbackMessage.new(post_data)
+    end
+
+    def is_validate_sign? app_key
+      hash = {'appid' => @post_data.app_id, 'appkey' => app_key, 'openid' => @post_data.open_id, 'timestamp' => @post_data.time_stamp}
+      signature = get_sign(hash)
+      signature == @post_data.app_signature
+    end
+  end
+
+  class WarningPostData < PostDataBase
+    def initialize post_data
+      @post_data = WarningMessage.new(post_data)
+    end
+  end
 end
