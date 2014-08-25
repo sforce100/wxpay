@@ -35,24 +35,11 @@ module Wxpay
         @wxconfig[:config_block].call(post_data, params, OpenStruct.new).to_h
       end
 
-      def package_action_alias mtd
-        alias mtd :package
-        self.before_filter :parse_wxpay_package, only: [mtd]
-      end
-
-      def notify_action_alias mtd
-        alias mtd :notify
-        self.before_filter :parse_wxpay_notify, only: [mtd]
-      end
-
-      def payfeedback_action_alias mtd
-        alias mtd :payfeedback
-        self.before_filter :parse_wxpay_payfeedback, only: [mtd]
-      end
-
-      def warning_action_alias mtd
-        alias mtd :warning
-        self.before_filter :parse_wxpay_warning, only: [mtd]
+      ['package', 'notify', 'payfeedback', 'warning'].each do |type|
+        define_method "#{type}_action_alias" do |mtd|
+          alias mtd type.to_sym
+          self.before_filter "parse_wxpay_#{type}".to_sym, only: [mtd]
+        end
       end
     end
 

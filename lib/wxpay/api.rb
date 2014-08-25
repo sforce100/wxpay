@@ -5,8 +5,8 @@ module Wxpay
     class << self
       def wxpay_params(config_hash, data)
         config = config_hash.with_indifferent_access
-        package_str = generate_package(config, data)
-        data = {
+        package_str = wxpay_package(config, data)
+        js_data = {
             'appid' => config[:app_id],
             'appkey' => config[:pay_sign_key],
             'noncestr' => SecureRandom.hex(16),
@@ -14,10 +14,10 @@ module Wxpay
             'package' => package_str
         }
 
-        pay_sign = generate_pay_sign(data)
+        pay_sign = generate_pay_sign(js_data)
         Rails.logger.info "package: #{package_str}"
         Rails.logger.info "pay_sign: #{pay_sign}"
-        data.merge({'pay_sign' => pay_sign})
+        js_data.merge({'pay_sign' => pay_sign})
       end
 
       # params: appid、appkey、openid、transid、out_trade_no、access_token
@@ -39,19 +39,40 @@ module Wxpay
         raise "微信支付发货请求失败:#{result_hash['errmsg']}" if result_hash['errcode'].to_i != 0
       end
 
+      def orderquery data
+        prev_data = {
+          "appid" => data[:appid],
+          "timestamp" => DateTime.now.to_i.to_s,
+          "sign_method" => "sha1",
+          "package" => orderquery_package(data[:partner_key], data[:partner_id], data[:out_trade_no])
+        }
+        prev_data.merge!({"app_signature" => generate_pay_sign({"appid" => data[:appid], "appkey" => data[:appkey], "timestamp" => prev_data["timestamp"], "package" => prev_data["package"]})})
+        
+        wx_post_request(orderquery_url(data[:access_token]), prev_data)
+      end
+
       private
-        def generate_package config, data
+        def generate_package(package_data, partner_key)
+          string1 = package_data.map { |k, v| "#{k}=#{v}" }.join("&")
+          stringSignTemp = "#{string1}&key=#{partner_key}"
+          sign = Digest::MD5.hexdigest(stringSignTemp).upcase
+          string2 = package_data.map { |k, v| "#{k}=#{urlencoding(v.to_s)}" }.join("&")  
+          "#{string2}&sign=#{sign}"
+        end
+
+        def wxpay_package(partner_key, data)
           package_data = data.merge({
             'bank_type' => 'WX',
             'fee_type' => '1',
             'input_charset' => 'UTF-8'
           }).sort
 
-          string1 = package_data.map { |k, v| "#{k}=#{v}" }.join("&")
-          stringSignTemp = "#{string1}&key=#{config[:partner_key]}"
-          sign = Digest::MD5.hexdigest(stringSignTemp).upcase
-          string2 = package_data.map { |k, v| "#{k}=#{urlencoding(v.to_s)}" }.join("&")  
-          "#{string2}&sign=#{sign}"
+          generate_package(package_data, partner_key)
+        end
+
+        def orderquery_package(partner_key, partner_id, out_trade_no)
+          package_data = { "out_trade_no" => out_trade_no, "partner" => partner_id }
+          generate_package(package_data, partner_key)
         end
 
         def urlencoding str
@@ -71,18 +92,21 @@ module Wxpay
             "out_trade_no" => data[:out_trade_no],
             "deliver_timestamp" => DateTime.now.to_i.to_s,
             "deliver_status" => data[:deliver_status],
-            "deliver_msg" => data[:deliver_msg],
-            "sign_method" => "sha1"
+            "deliver_msg" => data[:deliver_msg]
           }
-
           app_signature = generate_pay_sign(prev_data.merge("appkey" => data[:appkey]))
-          prev_data.merge!({"app_signature" => app_signature})
+          prev_data.merge!({ "app_signature" => app_signature, "sign_method" => "sha1" })
           
-          result = HTTParty.post(delivernotify_url(data[:access_token]), body: prev_data)
+          wx_post_request(delivernotify_url(data[:access_token]), prev_data)
+        end 
+
+        def wx_post_request(url, post_data)
+          result = HTTParty.post(url, body: post_data)
           result_hash = JSON.parse(result)
           p "delivernotify result: #{result}"
           raise "微信支付发货请求失败:#{result_hash['errmsg']}" if result_hash['errcode'].to_i != 0
-        end 
+          result_hash
+        end
 
         def delivernotify_url access_token
           "https://api.weixin.qq.com/pay/delivernotify?access_token=#{access_token}"
@@ -90,6 +114,10 @@ module Wxpay
 
         def update_feedback_url access_token, openid, feedbackid
           "https://api.weixin.qq.com/payfeedback/update?access_token=#{access_token}&openid=#{openid}&feedbackid=#{feedbackid}"
+        end
+
+        def orderquery_url access_token
+          "https://api.weixin.qq.com/pay/orderquery?access_token=#{access_token}"
         end
     end
   end
