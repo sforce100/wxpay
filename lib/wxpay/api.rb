@@ -3,12 +3,12 @@ require 'httparty'
 module Wxpay
   class Api
     class << self
-      def wxpay_params(config_hash, data)
-        config = config_hash.with_indifferent_access
-        package_str = wxpay_package(config, data)
+      def wxpay_params(data)
+        # config = config_hash.with_indifferent_access
+        package_str = wxpay_package(Wxpay.config.partner_key, data)
         js_data = {
-            'appid' => config[:app_id],
-            'appkey' => config[:pay_sign_key],
+            'appid' => Wxpay.config.app_id,
+            'appkey' => Wxpay.config.pay_sign_key,
             'noncestr' => SecureRandom.hex(16),
             'timestamp' => DateTime.now.to_i.to_s,
             'package' => package_str
@@ -41,13 +41,13 @@ module Wxpay
 
       def orderquery data
         prev_data = {
-          "appid" => data[:appid],
+          "appid" => Wxpay.config.appid,
           "timestamp" => DateTime.now.to_i.to_s,
           "sign_method" => "sha1",
-          "package" => orderquery_package(data[:partner_key], data[:partner_id], data[:out_trade_no])
+          "package" => orderquery_package(Wxpay.config.partner_key, Wxpay.config.partner_id, data[:out_trade_no])
         }
-        prev_data.merge!({"app_signature" => generate_pay_sign({"appid" => data[:appid], "appkey" => data[:appkey], "timestamp" => prev_data["timestamp"], "package" => prev_data["package"]})})
-        
+        prev_data.merge!({"app_signature" => generate_pay_sign({"appid" => Wxpay.config.app_id, "appkey" => Wxpay.config.pay_sign_key, "timestamp" => prev_data["timestamp"], "package" => prev_data["package"]})})
+
         wx_post_request(orderquery_url(data[:access_token]), prev_data)
       end
 
@@ -60,19 +60,19 @@ module Wxpay
           "#{string2}&sign=#{sign}"
         end
 
-        def wxpay_package(partner_key, data)
+        def wxpay_package(data)
           package_data = data.merge({
             'bank_type' => 'WX',
             'fee_type' => '1',
             'input_charset' => 'UTF-8'
           }).sort
 
-          generate_package(package_data, partner_key)
+          generate_package(package_data, Wxpay.config.partner_key)
         end
 
-        def orderquery_package(partner_key, partner_id, out_trade_no)
-          package_data = { "out_trade_no" => out_trade_no, "partner" => partner_id }
-          generate_package(package_data, partner_key)
+        def orderquery_package(out_trade_no)
+          package_data = { "out_trade_no" => out_trade_no, "partner" => Wxpay.config.partner_id }
+          generate_package(package_data, Wxpay.config.partner_key)
         end
 
         def urlencoding str
@@ -86,7 +86,7 @@ module Wxpay
 
         def delivernotify data
           prev_data = {
-            "appid" => data[:appid],
+            "appid" => Wxpay.config.app_id,
             "openid" => data[:openid],
             "transid" => data[:transid],
             "out_trade_no" => data[:out_trade_no],
@@ -94,7 +94,7 @@ module Wxpay
             "deliver_status" => data[:deliver_status],
             "deliver_msg" => data[:deliver_msg]
           }
-          app_signature = generate_pay_sign(prev_data.merge("appkey" => data[:appkey]))
+          app_signature = generate_pay_sign(prev_data.merge("appkey" => Wxpay.config.pay_sign_key))
           prev_data.merge!({ "app_signature" => app_signature, "sign_method" => "sha1" })
           
           wx_post_request(delivernotify_url(data[:access_token]), prev_data)

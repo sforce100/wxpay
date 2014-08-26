@@ -32,7 +32,8 @@ module Wxpay
       end
 
       def configuration post_data, params
-        @wxconfig[:config_block].call(post_data, params, OpenStruct.new).to_h
+        return Wxpay.config unless Wxpay.config.is_multi
+        @wxconfig[:config_block].call(post_data, params)
       end
 
       ['package', 'notify', 'payfeedback', 'warning'].each do |type|
@@ -45,7 +46,7 @@ module Wxpay
 
     def notify
       result = 
-      if @wx_post.is_validate_sign? @config[:pay_sign_key]
+      if @wx_post.is_validate_sign? @config.pay_sign_key
         Rails.logger.info "app_signature validate"
         self.class.get_notify_data(@wx_post.get_data, params) 
       else
@@ -58,7 +59,7 @@ module Wxpay
 
     def payfeedback
       result = 
-      if @wx_post.is_validate_sign? @config[:pay_sign_key]
+      if @wx_post.is_validate_sign? @config.pay_sign_key
         Rails.logger.info "app_signature validate"
         self.class.get_payfeedback_data(@wx_post.get_data, params)
       else
@@ -71,7 +72,7 @@ module Wxpay
 
     def warning
       result = 
-      if @wx_post.is_validate_sign? @config[:pay_sign_key]
+      if @wx_post.is_validate_sign? @config.pay_sign_key
         Rails.logger.info "app_signature validate"
         self.class.get_warning_data(@wx_post.get_data, params)
       else
@@ -83,9 +84,9 @@ module Wxpay
     end
 
     def package
-      @app_id = @config[:app_id]
-      @app_key = @config[:pay_sign_key]
-      @paterner_key = @config[:paterner_key]
+      @app_id = @config.app_id
+      @app_key = @config.pay_sign_key
+      @paterner_key = @config.paterner_key
       @time_stamp = DateTime.now.to_i
       @nonce_str = SecureRandom.hex 32
       if @wx_post.is_validate_sign? @app_key
