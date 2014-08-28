@@ -45,6 +45,44 @@ module WxHelper
     # </xml>
     NotifyMessage = Class.new(Message)
 
+    # <xml>
+    # <OpenId><![CDATA[111222]]></OpenId>
+    # <AppId><![CDATA[wwwwb4f85f3a797777]]></AppId>
+    # <TimeStamp> 1369743511</TimeStamp>
+    # <MsgType><![CDATA[request]]></MsgType>
+    # <FeedBackId><![CDATA[5883726847655944563]]></FeedBackId>
+    # <TransId><![CDATA[10123312412321435345]]></TransId>
+    # <Reason><![CDATA[商品质量有问题]]></Reason>
+    # <Solution><![CDATA[补发货给我]]></Solution>
+    # <ExtInfo><![CDATA[明天六点前联系我 18610847266]]></ExtInfo>
+    # <AppSignature><![CDATA[bafe07f060f22dcda0bfdb4b5ff756f973aecffa]]>
+    # </AppSignature>
+    # <SignMethod><![CDATA[sha1]]></ SignMethod >
+    # </xml> 
+    # <xml>
+    # <OpenId><![CDATA[111222]]></OpenId>
+    # <AppId><![CDATA[wwwwb4f85f3a797777]]></AppId>
+    # <TimeStamp> 1369743511</TimeStamp>
+    # <MsgType><![CDATA[confirm/reject]]></MsgType>
+    # <FeedBackId><![CDATA[5883726847655944563]]></FeedBackId>
+    # <Reason><![CDATA[商品质量有问题]]></Reason>
+    # <AppSignature><![CDATA[bafe07f060f22dcda0bfdb4b5ff756f973aecffa]]>
+    # </AppSignature>
+    # <SignMethod><![CDATA[sha1]]></ SignMethod >
+    # </xml>
+    PayFeedbackMessage = Class.new(Message)
+
+    # <xml>
+    # <AppId><![CDATA[wxf8b4f85f3a794e77]]></AppId>
+    # <ErrorType>1001</ErrorType>
+    # <Description><![CDATA[错识描述]]></Description>
+    # <AlarmContent><![CDATA[错误详情]]></AlarmContent>
+    # <TimeStamp>1393860740</TimeStamp>
+    # <AppSignature><![CDATA[f8164781a303f4d5a944a2dfc68411a8c7e4fbea]]></AppSignature>
+    # <SignMethod><![CDATA[sha1]]></SignMethod>
+    # </xml>
+    WarningMessage = Class.new(Message)
+
     class ResponseMessage
         include ROXML
         xml_name :xml

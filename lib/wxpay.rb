@@ -1,4 +1,5 @@
 require "wxpay/engine"
+require "wxpay/configuration"
 require "wxpay/helpers/params_helper"
 require "wxpay/helpers/xml_helper"
 require "wxpay/post_data"
