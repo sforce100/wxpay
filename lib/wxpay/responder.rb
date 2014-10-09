@@ -38,7 +38,9 @@ module Wxpay
 
       ['package', 'notify', 'payfeedback', 'warning'].each do |type|
         define_method "#{type}_action_alias" do |mtd|
-          alias mtd type.to_sym
+          _mtd = mtd.to_sym
+          _type = type.to_sym
+	  alias _mtd _type
           self.before_filter "parse_wxpay_#{type}".to_sym, only: [mtd]
         end
       end
