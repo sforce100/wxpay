@@ -9,8 +9,8 @@ Wxpay
 - add `gem 'wxpay', git: 'https://github.com/sforce100/wxpay.git'` to your gemfile
 
 - 跑初始化命令 `rails g wxpay:initializer wxpay`，之后会在创建config/initializers/wxpay_initializer.rb文件
- 
- ```
+
+```
  Wxpay.configure do |config|
   这里是当项目只用一个微信账号时的配置
   # config.app_id = conf_wxpay.app_id
@@ -29,30 +29,28 @@ Wxpay
     config.partner_id = conf_wxpay.partner_id
     config.partner_key = conf_wxpay.partner_key    
   end
-end
- ```
+ end
+```
 
 - 生成支付url
 
 ```
-Wxpay.config.setup_config(conf) #如果是单个微信账号可以忽略，如果是多个微信账号需要先设置账号配置，此方法会调用配置文件里面的custom_config block
-data = { 'body' => order.first_goods.synopsis, 
+ Wxpay.config.setup_config(conf) #如果是单个微信账号可以忽略，如果是多个微信账号需要先设置账号配置，此方法会调用配置文件里面的custom_config block
+ data = { 'body' => order.first_goods.synopsis, 
          'notify_url' => 'http://bestapp.ngrok.com/pays/wxpays/notify',
          'out_trade_no' => order.order_no, 
          'spbill_create_ip' => request.remote_ip, 
          'time_expire' => order.expired_at.strftime('%Y%m%d%H%M%S'),
          'total_fee' => '1'#order.price_to_fen 
        }
-Wxpay::Api.wxpay_params(data)
-
+ Wxpay::Api.wxpay_params(data)
 ```
 
 
 - 回调controller
 
 ```
-
-class Pay::WxpaysController < ApplicationController
+ class Pay::WxpaysController < ApplicationController
   protect_from_forgery :except => [:notify]
   
   layout :false
@@ -72,8 +70,7 @@ class Pay::WxpaysController < ApplicationController
     end
   end
 
-end
-
+ end
 ```
 
 
