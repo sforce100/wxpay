@@ -15,3 +15,12 @@ gemspec
 gem 'multi_xml', '>= 0.5.2'
 gem 'roxml'
 gem 'httparty'
+
+group :test do
+  gem 'generator_spec', '>= 0.8'
+  gem 'launchy', '>= 2.2'
+  gem 'rack-cache', require: 'rack/cache'
+  gem 'rspec-rails', '>= 2.14'
+  gem 'simplecov', require: false
+  gem 'rspec-mocks'
+end

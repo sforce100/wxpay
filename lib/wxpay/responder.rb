@@ -32,13 +32,16 @@ module Wxpay
       end
 
       def configuration post_data, params
-        return Wxpay.config unless Wxpay.config.is_multi
-        @wxconfig[:config_block].call(post_data, params)
+        if Wxpay.config.is_multi
+          @wxconfig[:config_block].call(post_data, params)
+        end
       end
 
       ['package', 'notify', 'payfeedback', 'warning'].each do |type|
         define_method "#{type}_action_alias" do |mtd|
-          alias_method mtd, type.to_sym
+          _mtd = mtd.to_sym
+          _type = type.to_sym
+	        alias _mtd _type
           self.before_filter "parse_wxpay_#{type}".to_sym, only: [mtd]
         end
       end
@@ -46,7 +49,7 @@ module Wxpay
 
     def notify
       result = 
-      if @wx_post.is_validate_sign? @config.pay_sign_key
+      if @wx_post.is_validate_sign?
         Rails.logger.info "app_signature validate"
         self.class.get_notify_data(@wx_post.get_data, params) 
       else
@@ -59,7 +62,7 @@ module Wxpay
 
     def payfeedback
       result = 
-      if @wx_post.is_validate_sign? @config.pay_sign_key
+      if @wx_post.is_validate_sign?
         Rails.logger.info "app_signature validate"
         self.class.get_payfeedback_data(@wx_post.get_data, params)
       else
@@ -72,7 +75,7 @@ module Wxpay
 
     def warning
       result = 
-      if @wx_post.is_validate_sign? @config.pay_sign_key
+      if @wx_post.is_validate_sign?
         Rails.logger.info "app_signature validate"
         self.class.get_warning_data(@wx_post.get_data, params)
       else
@@ -84,12 +87,11 @@ module Wxpay
     end
 
     def package
-      @app_id = @config.app_id
-      @app_key = @config.pay_sign_key
-      @paterner_key = @config.paterner_key
+      @app_id = Wxpay.config.app_id
+      @paterner_key = Wxpay.config.paterner_key
       @time_stamp = DateTime.now.to_i
       @nonce_str = SecureRandom.hex 32
-      if @wx_post.is_validate_sign? @app_key
+      if @wx_post.is_validate_sign?
         order_data = self.class.get_package_data(@wx_post.get_data)
         "app_signature invalidate"
         # 生产package
@@ -115,13 +117,13 @@ module Wxpay
 
       def parse_wxpay_payfeedback
         raw = request.body.read
-        Rails.logger.info "notify raw: #{raw}"
+        Rails.logger.info "payfeedback raw: #{raw}"
         @wx_post = Wxpay::PayFeedbackPostData.new(raw)
       end
       
       def parse_wxpay_warning
         raw = request.body.read
-        Rails.logger.info "notify raw: #{raw}"
+        Rails.logger.info "warning raw: #{raw}"
         @wx_post = Wxpay::WarningPostData.new(raw)
       end
 
