@@ -5,7 +5,7 @@ module Wxpay
     class << self
       def wxpay_params(data)
         # config = config_hash.with_indifferent_access
-        package_str = wxpay_package(Wxpay.config.partner_key, data)
+        package_str = wxpay_package(data)
         js_data = {
             'appid' => Wxpay.config.app_id,
             'appkey' => Wxpay.config.pay_sign_key,
@@ -62,6 +62,7 @@ module Wxpay
 
         def wxpay_package(data)
           package_data = data.merge({
+            'partner' => Wxpay.config.partner_id,
             'bank_type' => 'WX',
             'fee_type' => '1',
             'input_charset' => 'UTF-8'

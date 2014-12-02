@@ -20,7 +20,7 @@ module Wxpay
     end
 
     def setup_config *args
-      custom_config.call(args) if is_multi
+      custom_config.call(args.unshift(self)) if is_multi
     end
   end
 end

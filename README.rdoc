@@ -19,7 +19,7 @@ Wxpay
   # config.partner_id = conf_wxpay.partner_id
   # config.partner_key = conf_wxpay.partner_key
   
-  #未开放
+
   #下面是使用多个微信账号时的配置，下面的block可以自定义当回调，根据自己的需要
   config.is_multi = true
   config.custom_config = Proc.new do |conf_wxpay|
@@ -31,6 +31,21 @@ Wxpay
   end
 end
  ```
+
+- 生成支付url
+
+```
+Wxpay.config.setup_config(conf) #如果是单个微信账号可以忽略，如果是多个微信账号需要先设置账号配置，此方法会调用配置文件里面的custom_config block
+data = { 'body' => order.first_goods.synopsis, 
+         'notify_url' => 'http://bestapp.ngrok.com/pays/wxpays/notify',
+         'out_trade_no' => order.order_no, 
+         'spbill_create_ip' => request.remote_ip, 
+         'time_expire' => order.expired_at.strftime('%Y%m%d%H%M%S'),
+         'total_fee' => '1'#order.price_to_fen 
+       }
+Wxpay::Api.wxpay_params(data)
+
+```
 
 
 - 回调controller
@@ -47,12 +62,7 @@ class Pay::WxpaysController < ApplicationController
   config_block do |post_data, params, config|
     #下面时通过数据获取不同微信账号信息配置
     conf_wxpay = Conf::Wxpay.find_by_app_id(post_data.app_id)
-    config.app_id = conf_wxpay.app_id
-    config.app_secret = conf_wxpay.app_secret
-    config.pay_sign_key = conf_wxpay.pay_sign_key
-    config.partner_id = conf_wxpay.partner_id
-    config.partner_key = conf_wxpay.partner_key
-    config
+    Wxpay.config.setup_config(conf_wxpay)
   end
 
   # 这里写支付回调逻辑，其他回调同理（'package', 'notify', 'payfeedback', 'warning'）
@@ -65,6 +75,12 @@ class Pay::WxpaysController < ApplicationController
 end
 
 ```
+
+
+－ 其他
+其中发货处理和警告尚未测试
+
+
 
 
 
