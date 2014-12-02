@@ -1,3 +1,72 @@
-= Wxpay
+= 
+Wxpay
+
+=== 
+说明：本gem目的实现微信支付功能，提供支付回调和各种发货警告接口等api。本gem未经过正式线上环境测试。
+
+使用步骤：
+
+- add `gem 'wxpay', git: 'https://github.com/sforce100/wxpay.git'` to your gemfile
+
+- 跑初始化命令 `rails g wxpay:initializer wxpay`，之后会在创建config/initializers/wxpay_initializer.rb文件
+ 
+ ```
+ Wxpay.configure do |config|
+  这里是当项目只用一个微信账号时的配置
+  # config.app_id = conf_wxpay.app_id
+  # config.app_secret = conf_wxpay.app_secret
+  # config.pay_sign_key = conf_wxpay.pay_sign_key
+  # config.partner_id = conf_wxpay.partner_id
+  # config.partner_key = conf_wxpay.partner_key
+  
+  #未开放
+  #下面是使用多个微信账号时的配置，下面的block可以自定义当回调，根据自己的需要
+  config.is_multi = true
+  config.custom_config = Proc.new do |conf_wxpay|
+    config.app_id = conf_wxpay.app_id
+    config.app_secret = conf_wxpay.app_secret
+    config.pay_sign_key = conf_wxpay.pay_sign_key
+    config.partner_id = conf_wxpay.partner_id
+    config.partner_key = conf_wxpay.partner_key    
+  end
+end
+ ```
+
+
+- 回调controller
+
+```
+
+class Pay::WxpaysController < ApplicationController
+  protect_from_forgery :except => [:notify]
+  
+  layout :false
+  wechat_responder
+  
+  # 多账户时的配置，单账户忽略
+  config_block do |post_data, params, config|
+    #下面时通过数据获取不同微信账号信息配置
+    conf_wxpay = Conf::Wxpay.find_by_app_id(post_data.app_id)
+    config.app_id = conf_wxpay.app_id
+    config.app_secret = conf_wxpay.app_secret
+    config.pay_sign_key = conf_wxpay.pay_sign_key
+    config.partner_id = conf_wxpay.partner_id
+    config.partner_key = conf_wxpay.partner_key
+    config
+  end
+
+  # 这里写支付回调逻辑，其他回调同理（'package', 'notify', 'payfeedback', 'warning'）
+  notify_block do |post_data, params, config|
+    if params[:trade_state].to_i == 0
+      payment_notify({out_trade_no: params[:out_trade_no], trade_no: params[:transaction_id]})
+    end
+  end
+
+end
+
+```
+
+
+
 
 This project rocks and uses MIT-LICENSE.
